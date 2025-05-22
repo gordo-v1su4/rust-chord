@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Chord - WebAssembly Audio Sampler</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Rust Chord</h1>
+            <div class="file-controls">
+                <input type="file" id="audioFileInput" accept="audio/*" />
+                <button id="loadFileBtn">Load Audio</button>
+                <input type="file" id="videoFileInput" accept="video/*" />
+                <button id="loadVideoBtn">Load Video</button>
+            </div>
+        </header>
+        
+        <main>
+            <div class="waveform-container">
+                <canvas id="waveformCanvas"></canvas>
+            </div>
+            
+            <div class="video-container">
+                <canvas id="videoCanvas"></canvas>
+            </div>
+            
+            <div class="transport-controls">
+                <button id="playBtn" class="transport-btn">Play</button>
+                <button id="pauseBtn" class="transport-btn">Pause</button>
+                <button id="stopBtn" class="transport-btn">Stop</button>
+                <input type="range" id="seekSlider" min="0" max="100" value="0" />
+                <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+            </div>
+            
+            <div class="controls-container">
+                <div class="control-section">
+                    <h2>Loop Controls</h2>
+                    <div class="control-group">
+                        <label for="loopStartTime">Loop Start</label>
+                        <input type="range" id="loopStartTime" min="0" max="100" value="0" />
+                        <span id="loopStartValue">0.00s</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="loopEndTime">Loop End</label>
+                        <input type="range" id="loopEndTime" min="0" max="100" value="100" />
+                        <span id="loopEndValue">0.00s</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="loopEnabled">Loop Enabled</label>
+                        <input type="checkbox" id="loopEnabled" />
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>Envelope</h2>
+                    <div class="control-group">
+                        <label for="attackTime">Attack</label>
+                        <input type="range" id="attackTime" min="0" max="100" value="10" />
+                        <span id="attackValue">0.01s</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="decayTime">Decay</label>
+                        <input type="range" id="decayTime" min="0" max="100" value="20" />
+                        <span id="decayValue">0.10s</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="holdTime">Hold</label>
+                        <input type="range" id="holdTime" min="0" max="100" value="0" />
+                        <span id="holdValue">0.00s</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="sustainLevel">Sustain</label>
+                        <input type="range" id="sustainLevel" min="0" max="100" value="70" />
+                        <span id="sustainValue">70%</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="releaseTime">Release</label>
+                        <input type="range" id="releaseTime" min="0" max="100" value="30" />
+                        <span id="releaseValue">0.30s</span>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h2>Effects</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="filter">Filter</button>
+                        <button class="tab-btn" data-tab="delay">Delay</button>
+                        <button class="tab-btn" data-tab="distortion">Distortion</button>
+                    </div>
+                    
+                    <div class="tab-content" id="filterTab">
+                        <div class="control-group">
+                            <label for="filterType">Type</label>
+                            <select id="filterType">
+                                <option value="0">Low Pass</option>
+                                <option value="1">High Pass</option>
+                                <option value="2">Band Pass</option>
+                                <option value="3">Notch</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="filterCutoff">Cutoff</label>
+                            <input type="range" id="filterCutoff" min="20" max="20000" value="1000" />
+                            <span id="cutoffValue">1000 Hz</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="filterResonance">Resonance</label>
+                            <input type="range" id="filterResonance" min="0.1" max="20" value="1" step="0.1" />
+                            <span id="resonanceValue">1.0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content hidden" id="delayTab">
+                        <div class="control-group">
+                            <label for="delayTime">Time</label>
+                            <input type="range" id="delayTime" min="0.01" max="2" value="0.3" step="0.01" />
+                            <span id="delayTimeValue">0.30s</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="delayFeedback">Feedback</label>
+                            <input type="range" id="delayFeedback" min="0" max="0.99" value="0.5" step="0.01" />
+                            <span id="feedbackValue">50%</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="delayMix">Mix</label>
+                            <input type="range" id="delayMix" min="0" max="1" value="0.3" step="0.01" />
+                            <span id="delayMixValue">30%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content hidden" id="distortionTab">
+                        <div class="control-group">
+                            <label for="distortionType">Type</label>
+                            <select id="distortionType">
+                                <option value="0">Soft</option>
+                                <option value="1">Hard</option>
+                                <option value="2">Foldback</option>
+                                <option value="3">Sine</option>
+                                <option value="4">Bitcrush</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="distortionDrive">Drive</label>
+                            <input type="range" id="distortionDrive" min="1" max="100" value="10" />
+                            <span id="driveValue">10</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="distortionMix">Mix</label>
+                            <input type="range" id="distortionMix" min="0" max="1" value="0.5" step="0.01" />
+                            <span id="distortionMixValue">50%</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="outputGain">Output Gain</label>
+                            <input type="range" id="outputGain" min="0" max="1" value="0.7" step="0.01" />
+                            <span id="outputGainValue">70%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="meters-container">
+                <div class="meter">
+                    <div class="meter-label">Level</div>
+                    <div class="meter-bar" id="levelMeter"></div>
+                    <div class="meter-value" id="levelValue">-∞ dB</div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Rust Chord - WebAssembly Audio Sampler with Video Sync</p>
+        </footer>
+    </div>
+    
+    <script src="src/main.js" type="module"></script>
+</body>
+</html>
