@@ -4,6 +4,10 @@ mod processor;
 mod envelope;
 mod effects;
 mod utils;
+mod waveform;
+
+// Re-export waveform functions for JavaScript use
+pub use waveform::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global allocator.
 #[cfg(feature = "wee_alloc")]

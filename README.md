@@ -1,11 +1,11 @@
 # Rust Chord
 
-A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and Web technologies.
+A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and Web technologies. Now featuring Rust-based UI components from the iced-rs framework.
 
 ## Features
 
 - Audio sample loading and playback
-- Waveform visualization with playhead
+- Waveform visualization with playhead (JavaScript or Rust-based)
 - Transport controls (play, pause, stop, seek)
 - Loop region support
 - ADHSR envelope (Attack, Decay, Hold, Sustain, Release)
@@ -20,7 +20,8 @@ A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and We
 
 ## Technology Stack
 
-- **Rust**: Core audio processing logic compiled to WebAssembly
+- **Rust**: Core audio processing logic and UI components compiled to WebAssembly
+- **iced-rs**: Rust UI toolkit for waveform visualization
 - **WebAssembly**: High-performance audio processing in the browser
 - **Web Audio API**: Audio context and worklet for real-time audio processing
 - **Web Codecs API**: Video decoding and processing
@@ -32,7 +33,7 @@ A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and We
 
 ```
 rust-chord/
-├── sampler-wasm/               # Rust WebAssembly library
+├── sampler-wasm/               # Rust WebAssembly library for audio processing
 │   ├── src/
 │   │   ├── lib.rs              # Main Rust library entry point
 │   │   ├── processor.rs        # Audio processor implementation
@@ -46,6 +47,16 @@ rust-chord/
 │   ├── Cargo.toml              # Rust dependencies and config
 │   └── Cargo.lock              # Locked dependencies
 │
+├── ui-components/              # Rust WebAssembly library for UI components
+│   ├── src/
+│   │   ├── lib.rs              # Main UI library entry point
+│   │   └── waveform/           # Waveform visualization component
+│   │       ├── mod.rs          # Waveform module definition
+│   │       ├── style.rs        # Styling for waveform component
+│   │       └── wave.rs         # Wave data representation
+│   ├── Cargo.toml              # Rust dependencies and config
+│   └── build.js                # Build script for WebAssembly
+│
 ├── frontend/                   # Web frontend
 │   ├── src/
 │   │   ├── main.js             # Main JavaScript entry point
@@ -58,14 +69,16 @@ rust-chord/
 │   │   │   ├── renderer.js     # WebGL/WebGPU rendering
 │   │   │   └── sync.js         # A/V synchronization
 │   │   ├── ui/
-│   │   │   ├── waveform.js     # Waveform visualization
+│   │   │   ├── waveform.js     # JavaScript waveform visualization
+│   │   │   ├── rust-waveform.js # Rust waveform integration
 │   │   │   ├── transport.js    # Transport controls
 │   │   │   ├── effects.js      # Effects UI
 │   │   │   └── meters.js       # Audio level meters
 │   │   └── utils/
 │   │       ├── file-loader.js  # File loading utilities
 │   │       └── keyboard.js     # Keyboard input handling
-│   ├── index.html              # Main HTML file
+│   ├── index.html              # Main HTML file (JavaScript UI)
+│   ├── index-rust.html         # Alternative HTML file (Rust UI)
 │   ├── styles/
 │   │   └── main.css            # Main CSS styles
 │   └── assets/                 # Static assets
@@ -93,11 +106,17 @@ rust-chord/
    cd rust-chord
    ```
 
-2. Build the WebAssembly module:
+2. Build the WebAssembly modules:
    ```
+   # Option 1: Build each module separately
    cd sampler-wasm
    wasm-pack build --target web
+   cd ../ui-components
+   wasm-pack build --target web --out-dir ../frontend/wasm/ui-components
    cd ..
+   
+   # Option 2: Use the provided build script
+   ./build-and-run.sh
    ```
 
 3. Install JavaScript dependencies:
@@ -110,7 +129,9 @@ rust-chord/
    npm run dev
    ```
 
-5. Open your browser and navigate to `https://localhost:8080`
+5. Open your browser and navigate to:
+   - `https://localhost:8080` for the JavaScript UI version
+   - `https://localhost:8080/index-rust.html` for the Rust UI version
 
 ### Building for Production
 
@@ -153,3 +174,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - The Rust and WebAssembly teams for their excellent tools and documentation
 - The Web Audio API and Web Codecs API specifications and implementations
+- The [iced-rs](https://github.com/iced-rs/iced) project for Rust UI components
+- The [xmodits](https://github.com/B0ney/xmodits) project for audio DAW elements

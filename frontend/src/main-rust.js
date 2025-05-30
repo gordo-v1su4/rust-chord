@@ -1,6 +1,5 @@
 // Import modules
 import { initAudioContext, createSamplerWorklet } from './audio/context.js';
-import { setupEnhancedWaveformVisualization, drawEnhancedWaveform, updateEnhancedPlayhead, setEnhancedLoopRegion } from './ui/enhanced-waveform.js';
 import { setupTransportControls } from './ui/transport.js';
 import { setupEffectsUI } from './ui/effects.js';
 import { setupMeters, updateMeters } from './ui/meters.js';
@@ -8,6 +7,7 @@ import { loadAudioFile } from './utils/file-loader.js';
 import { setupKeyboardHandlers } from './utils/keyboard.js';
 import { initVideoDecoder, setupVideoRenderer } from './video/decoder.js';
 import { syncAudioVideo } from './video/sync.js';
+import { RustWaveform, initRustWaveform } from './ui/rust-waveform.js';
 
 // Global state
 let audioContext;
@@ -18,6 +18,7 @@ let isPlaying = false;
 let currentTime = 0;
 let totalDuration = 0;
 let animationFrameId = null;
+let rustWaveform = null;
 
 // Status message function
 function showStatusMessage(message, isError = false) {
@@ -53,6 +54,9 @@ const videoCanvas = document.getElementById('videoCanvas');
 // Initialize the application
 async function init() {
     try {
+        // Initialize Rust waveform module
+        await initRustWaveform();
+        
         // Initialize audio context when user interacts
         const initContainer = document.createElement('div');
         initContainer.classList.add('init-container');
@@ -77,8 +81,10 @@ async function init() {
             samplerNode = await createSamplerWorklet(audioContext);
             
             // Set up UI components
-            await setupEnhancedWaveformVisualization(waveformCanvas);
-            setupTransportControls(handlePlay, handlePause, handleStop, handleSeek, handleLoopChange);
+            rustWaveform = new RustWaveform('waveformCanvas');
+            await rustWaveform.initialize();
+            
+            setupTransportControls(handlePlay, handlePause, handleStop, handleSeek);
             setupEffectsUI(updateEffectParameter);
             setupMeters();
             setupKeyboardHandlers(handleKeyboardEvent);
@@ -113,7 +119,7 @@ async function handleAudioFileSelect(event) {
         totalDuration = audioBuffer.duration;
         
         // Update UI with new audio data
-        drawEnhancedWaveform(waveformCanvas, audioBuffer);
+        rustWaveform.loadAudioData(audioBuffer);
         updateTotalDuration(totalDuration);
         
         // Send audio data to the sampler worklet
@@ -176,7 +182,7 @@ function handlePlay() {
         if (currentTime >= totalDuration) {
             currentTime = 0;
             updateCurrentTime(currentTime);
-            updateEnhancedPlayhead(waveformCanvas, 0);
+            rustWaveform.setPlayhead(0);
         }
         
         // Tell the sampler to start playing
@@ -224,7 +230,7 @@ function handleStop() {
     updateCurrentTime(currentTime);
     
     // Update UI
-    updateEnhancedPlayhead(waveformCanvas, 0);
+    rustWaveform.setPlayhead(0);
     
     // Stop animation loop
     stopAnimationLoop();
@@ -247,7 +253,7 @@ function handleSeek(position) {
     updateCurrentTime(currentTime);
     
     // Update UI
-    updateEnhancedPlayhead(waveformCanvas, position / 100);
+    rustWaveform.setPlayhead(position / 100);
     
     console.log('Seeked to position:', position, 'time:', seekTime);
 }
@@ -307,7 +313,7 @@ function startAnimationLoop() {
         
         // Update UI elements
         const playbackPosition = currentTime / totalDuration;
-        updateEnhancedPlayhead(waveformCanvas, playbackPosition);
+        rustWaveform.setPlayhead(playbackPosition);
         updateCurrentTime(currentTime);
         updateMeters(samplerNode);
         
@@ -328,26 +334,6 @@ function stopAnimationLoop() {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
     }
-}
-
-// Handle loop region change
-function handleLoopChange(start, end, enabled) {
-    // Convert time values to normalized positions (0-1)
-    const startPosition = start / totalDuration;
-    const endPosition = end / totalDuration;
-    
-    // Update loop region in the enhanced waveform
-    setEnhancedLoopRegion(startPosition, endPosition, enabled);
-    
-    // Tell the sampler worklet about the loop
-    samplerNode.port.postMessage({
-        type: 'setLoopRegion',
-        loopStart: start,
-        loopEnd: end,
-        loopEnabled: enabled
-    });
-    
-    console.log('Loop region updated:', start, end, enabled);
 }
 
 // Helper functions

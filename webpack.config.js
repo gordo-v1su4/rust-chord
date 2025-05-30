@@ -47,6 +47,11 @@ module.exports = (env, argv) => {
             from: 'sampler-wasm/pkg',
             to: 'sampler-wasm/pkg',
             noErrorOnMissing: true // Don't error if the Wasm hasn't been built yet
+          },
+          {
+            from: 'frontend/wasm/ui-components',
+            to: 'wasm/ui-components',
+            noErrorOnMissing: true // Don't error if the UI components Wasm hasn't been built yet
           }
         ]
       })
