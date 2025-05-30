@@ -1,6 +1,25 @@
 # Rust Chord
 
-A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and Web technologies. Now featuring Rust-based UI components from the iced-rs framework.
+A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and Web technologies. Features both JavaScript-based and Rust-based UI components for waveform visualization.
+
+## Project Status
+
+✅ **Core Features Complete:**
+- Audio sample loading and playback
+- Waveform visualization (JavaScript and Rust implementations)
+- Transport controls with seeking
+- Loop region support
+- ADHSR envelope
+- Audio effects (Filter, Delay, Distortion)
+- Video playback with audio synchronization
+- MIDI input support
+- Keyboard input for triggering samples
+- Level metering
+
+✅ **Recently Rebuilt:**
+- UI components module recreated with canvas-based Rust waveform renderer
+- Both sampler-wasm and ui-components modules successfully built
+- Project structure restored after GitHub issues
 
 ## Features
 
@@ -21,13 +40,14 @@ A browser-based DAW-like sampler with video sync using Rust (WebAssembly) and We
 ## Technology Stack
 
 - **Rust**: Core audio processing logic and UI components compiled to WebAssembly
-- **iced-rs**: Rust UI toolkit for waveform visualization
-- **WebAssembly**: High-performance audio processing in the browser
+- **WebAssembly**: High-performance audio processing and canvas-based UI rendering in the browser
 - **Web Audio API**: Audio context and worklet for real-time audio processing
 - **Web Codecs API**: Video decoding and processing
 - **WebGL/WebGPU**: Video rendering
-- **JavaScript**: Frontend application logic
+- **JavaScript**: Frontend application logic and waveform visualization
+- **HTML5 Canvas**: 2D graphics rendering for waveforms (both JS and Rust implementations)
 - **HTML/CSS**: User interface
+- **Webpack**: Module bundling and development server
 
 ## Project Structure
 
@@ -108,14 +128,17 @@ rust-chord/
 
 2. Build the WebAssembly modules:
    ```
-   # Option 1: Build each module separately
+   # Build the sampler-wasm module
    cd sampler-wasm
    wasm-pack build --target web
-   cd ../ui-components
+   cd ..
+   
+   # Build the ui-components module
+   cd ui-components
    wasm-pack build --target web --out-dir ../frontend/wasm/ui-components
    cd ..
    
-   # Option 2: Use the provided build script
+   # Alternative: Use the provided build script
    ./build-and-run.sh
    ```
 
