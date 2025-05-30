@@ -1,4 +1,4 @@
-/node_modules/*
+
 .DS_Store
 *.log
 /build
@@ -7,4 +7,3 @@
 .idea/
 *.swp
 *.tmp
-/xmodits/*
